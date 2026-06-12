@@ -15,23 +15,43 @@ pub enum BitcoinError {
 
 impl CompactSize {
     pub fn new(value: u64) -> Self {
-        // TODO: Construct a CompactSize from a u64 value
+        CompactSize { value }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        // TODO: Encode according to Bitcoin's CompactSize format:
-        // [0x00–0xFC] => 1 byte
-        // [0xFDxxxx] => 0xFD + u16 (2 bytes)
-        // [0xFExxxxxxxx] => 0xFE + u32 (4 bytes)
-        // [0xFFxxxxxxxxxxxxxxxx] => 0xFF + u64 (8 bytes)
+        let mut bytes = Vec::new();
+
+    if self.value <= 0xFC {
+        bytes.push(self.value as u8);
+
+    } else if self.value <= 0xFFFF {
+        bytes.push(0xFD);
+        bytes.extend_from_slice(&(self.value as u16).to_le_bytes());
+
+    } else if self.value <= 0xFFFFFFFF {
+        bytes.push(0xFE);
+        bytes.extend_from_slice(&(self.value as u32).to_le_bytes());
+
+    } else {
+        bytes.push(0xFF);
+        bytes.extend_from_slice(&self.value.to_le_bytes());
+    }
+    bytes
+}
+
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
         // TODO: Decode CompactSize, returning value and number of bytes consumed.
         // First check if bytes is empty.
         // Check that enough bytes are available based on prefix.
+        if bytes.is_empty() {
+            return Err(BitcoinError::InsufficientBytes);
+        }
+        let prefix = bytes[0];
+        match prefix {
+        }
     }
-}
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Txid(pub [u8; 32]);
@@ -41,7 +61,9 @@ impl Serialize for Txid {
     where
         S: serde::Serializer,
     {
-        // TODO: Serialize as a hex-encoded string (32 bytes => 64 hex characters)
+        let mut bytes = self.0;
+        bytes.reverse();
+        let hex_string = hex::encode(bytes);
     }
 }
 
@@ -52,6 +74,9 @@ impl<'de> Deserialize<'de> for Txid {
     {
         // TODO: Parse hex string into 32-byte array
         // Use `hex::decode`, validate length = 32
+        let s = String::deserialize(deserializer)?;
+        if bytes.len() != 32 {
+            return Err(serde::de::Error::custom("Invalid Txid length"));
     }
 }
 
@@ -63,7 +88,7 @@ pub struct OutPoint {
 
 impl OutPoint {
     pub fn new(txid: [u8; 32], vout: u32) -> Self {
-        // TODO: Create an OutPoint from raw txid bytes and output index
+        OutPoint { txid: Txid(txid)}}
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -84,6 +109,7 @@ pub struct Script {
 impl Script {
     pub fn new(bytes: Vec<u8>) -> Self {
         // TODO: Simple constructor
+            Script { bytes }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -136,7 +162,8 @@ pub struct BitcoinTransaction {
 
 impl BitcoinTransaction {
     pub fn new(version: u32, inputs: Vec<TransactionInput>, lock_time: u32) -> Self {
-        // TODO: Construct a transaction from parts
+        BitcoinTransaction { version, inputs, lock_time }
+    }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
